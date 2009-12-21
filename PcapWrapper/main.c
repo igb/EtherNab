@@ -2,6 +2,7 @@
 #include <pcap.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 
@@ -99,10 +100,12 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 		printf("   * Invalid IP header length: %u bytes\n", size_ip);
 		return;
 	}
+	/* print source and destination IP addresses */
+	printf("       From: %s\n", inet_ntoa(ip->ip_src));
+	printf("         To: %s\n", inet_ntoa(ip->ip_dst));
 	
-	
-	//		printf("\tfrom %s\t",inet_ntoa(ip->ip_src));
-	//		printf("\tTO %s\t",inet_ntoa(ip->ip_dst));
+	//printf("\tfrom %s\t",inet_ntoa(ip->ip_src));
+	//printf("\tTO %s\t",inet_ntoa(ip->ip_dst));
 	
 	
 	printf("\tttl %d \t\n",(ip->ip_ttl));
@@ -130,7 +133,7 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 	
-	//printf("payload: %s", tos);
+	printf("payload: %c", payload);
 	
 	
 	
@@ -149,7 +152,7 @@ int main (int argc, const char * argv[]) {
 	pcap_t *handle;			/* Session handle */
 
 	struct bpf_program fp;		/* The compiled filter */
-	char filter_exp[] = "port 80";	/* The filter expression */
+	char filter_exp[] = "tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)";	/* The filter expression */
 	
 	struct pcap_pkthdr header;	/* The header that pcap gives us */
 	const u_char *packet;		/* The actual packet */
