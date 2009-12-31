@@ -6,6 +6,15 @@
 
 
 
+/* HTTP Response struct */
+ 
+struct http_response {
+	int status;
+	char* mime_type;
+		
+};
+
+
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
 
@@ -72,8 +81,8 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	
 	/* Print its length */
-	printf("Jacked a packet with length of [%d]\n", header->len);
-	printf("Jacked a packet with cap length of [%d]\n", header->caplen);
+//	printf("Jacked a packet with length of [%d]\n", header->len);
+//	printf("Jacked a packet with cap length of [%d]\n", header->caplen);
 	
 	
 	
@@ -104,16 +113,13 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	printf("       From: %s\n", inet_ntoa(ip->ip_src));
 	printf("         To: %s\n", inet_ntoa(ip->ip_dst));
 	
-	//printf("\tfrom %s\t",inet_ntoa(ip->ip_src));
-	//printf("\tTO %s\t",inet_ntoa(ip->ip_dst));
-	
-	
-	printf("\tttl %d \t\n",(ip->ip_ttl));
-	printf("\tProtocol %d\t",(ip->ip_p));
-	printf("\t\tChecksum %d\t",(ip->ip_sum));
-	printf("\tTOS %d \t\n",(ip-> ip_tos));
-	printf("\ttotal length %d \t",(ip-> ip_len));
-	printf("\tIdentification %d \t",(ip->ip_id));
+		
+	printf("\tttl %d \n",(ip->ip_ttl));
+	printf("\tProtocol %d\n",(ip->ip_p));
+	printf("\t\tChecksum %d\n",(ip->ip_sum));
+	printf("\tTOS %d \n",(ip-> ip_tos));
+	printf("\ttotal length %d \n",(ip-> ip_len));
+	printf("\tIdentification %d \n",(ip->ip_id));
 	printf("Fragment Offset %d \n",(ip->ip_off));	
 	//	printf("\tVersion %d\t\n",(ip->ip_v));
 	
@@ -133,7 +139,11 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 	
-	printf("payload: %c", payload);
+	int size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
+	
+	printf("payload size?: %d\n", packet + SIZE_ETHERNET + size_ip + size_tcp);
+	printf("payload size?: %d\n", size_payload);
+	print_payload(payload, size_payload);
 	
 	
 	
@@ -141,6 +151,29 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 
 
 
+void print_payload(const u_char *payload, int length) {
+
+	int i;
+	for(i = 0; i < length; i++) {
+		if (isprint(*payload)) {
+			printf("%c", *payload);
+		} else {
+			int c=*payload;
+			if (c == 10) {
+				printf("NL");
+			} else if (c == 13) {
+				printf("CR");
+			} else {
+				printf("%d", *payload);
+
+			}
+
+		}
+		payload++;
+	}	
+	
+
+}
 
 
 
@@ -196,7 +229,7 @@ int main (int argc, const char * argv[]) {
 	}
 
 
-	pcap_loop(handle, 10, handle_packet, "igb");	
+	pcap_loop(handle, 1000, handle_packet, "igb");	
 
 
 

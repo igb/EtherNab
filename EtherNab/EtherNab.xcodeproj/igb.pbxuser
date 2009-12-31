@@ -9,11 +9,44 @@
 			CC44472A10DD5FA000A76054 /* EtherNab */,
 		);
 		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					341,
+					20,
+					48.16259765625,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
 			PBXPerProjectTemplateStateSaveDate = 282943392;
 			PBXWorkspaceStateSaveDate = 282943392;
 		};
+		perUserProjectItems = {
+			CC44496D10E0DEEC00A76054 /* PBXTextBookmark */ = CC44496D10E0DEEC00A76054 /* PBXTextBookmark */;
+			CC44496E10E0DEEC00A76054 /* PBXTextBookmark */ = CC44496E10E0DEEC00A76054 /* PBXTextBookmark */;
+		};
 		sourceControlManager = CC44473710DD5FC000A76054 /* Source Control */;
 		userBuildSettings = {
+		};
+	};
+	29B97316FDCFA39411CA2CEA /* main.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {519, 286}}";
+			sepNavSelRange = "{37, 0}";
+			sepNavVisRange = "{38, 263}";
 		};
 	};
 	8D1107260486CEB800E47090 /* EtherNab */ = {
@@ -38,6 +71,7 @@
 		dataTipSortType = 0;
 		debuggerPlugin = GDBDebugging;
 		disassemblyDisplayState = 0;
+		dylibVariantSuffix = "";
 		enableDebugStr = 1;
 		environmentEntries = (
 		);
@@ -45,6 +79,8 @@
 		executableUserSymbolLevel = 0;
 		libgmallocEnabled = 0;
 		name = EtherNab;
+		savedGlobals = {
+		};
 		showTypeColumn = 0;
 		sourceDirectories = (
 		);
@@ -62,5 +98,25 @@
 	CC44473810DD5FC000A76054 /* Code sense */ = {
 		isa = PBXCodeSenseManager;
 		indexTemplatePath = "";
+	};
+	CC44496D10E0DEEC00A76054 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 29B97316FDCFA39411CA2CEA /* main.m */;
+		name = "main.m: 1";
+		rLen = 0;
+		rLoc = 39;
+		rType = 0;
+		vrLen = 252;
+		vrLoc = 0;
+	};
+	CC44496E10E0DEEC00A76054 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 29B97316FDCFA39411CA2CEA /* main.m */;
+		name = "main.m: 3";
+		rLen = 0;
+		rLoc = 37;
+		rType = 0;
+		vrLen = 263;
+		vrLoc = 38;
 	};
 }
