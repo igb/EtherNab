@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include <pcap.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
@@ -12,6 +15,11 @@ struct http_response {
 	int status;
 	char* mime_type;
 		
+};
+
+struct list_node {
+	char* data;
+	struct list_node *next;
 };
 
 
@@ -77,6 +85,48 @@ struct sniff_tcp {
 
 
 
+char *retrieve_payload(const u_char *payload, int length) {
+	
+	char* first_header= malloc(length);
+	
+	int i;
+	
+	for(i = 0; i < length; i++) {
+		if (isprint(*payload)) {
+			printf("%c", *payload);
+			char* mychar= malloc(2);
+			sprintf(mychar, "%c", *payload);
+			strcat(first_header,mychar);
+		} else {
+			
+			int c=*payload;
+			
+			int c2=-1;
+			
+			if (c == 13) {
+				i++;
+				payload++;
+				c2=*payload;
+				if (c2 == 10) {
+					printf("\n"); 
+				}
+			} else {
+				printf("%d", *payload);
+			}
+			
+			
+			
+		}
+		payload++;
+	}	
+	
+	return first_header;
+}
+
+
+
+
+
 void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 	
 	
@@ -109,25 +159,26 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 		printf("   * Invalid IP header length: %u bytes\n", size_ip);
 		return;
 	}
-	/* print source and destination IP addresses */
-	printf("       From: %s\n", inet_ntoa(ip->ip_src));
-	printf("         To: %s\n", inet_ntoa(ip->ip_dst));
 	
-		
-	printf("\tttl %d \n",(ip->ip_ttl));
-	printf("\tProtocol %d\n",(ip->ip_p));
-	printf("\t\tChecksum %d\n",(ip->ip_sum));
-	printf("\tTOS %d \n",(ip-> ip_tos));
-	printf("\ttotal length %d \n",(ip-> ip_len));
-	printf("\tIdentification %d \n",(ip->ip_id));
-	printf("Fragment Offset %d \n",(ip->ip_off));	
-	//	printf("\tVersion %d\t\n",(ip->ip_v));
+	
+	/* print source and destination IP addresses */
+	printf("\n\nFrom: %s\n", inet_ntoa(ip->ip_src));
+	printf("To: %s\n", inet_ntoa(ip->ip_dst));
+	printf("TTL: %d \n",(ip->ip_ttl));
+	printf("Protocol: %d\n",(ip->ip_p));
+	printf("Checksum: %d\n",(ip->ip_sum));
+	printf("TOS: %d \n",(ip-> ip_tos));
+	printf("Total Length: %d \n",(ip-> ip_len));
+	printf("Identification: %d \n",(ip->ip_id));
+	printf("Fragment Offset: %d \n",(ip->ip_off));	
+	printf("Version: %d\t\n\n",(ip->ip_vhl >> 4));
 	
 	
 	
 	
 	tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
 	size_tcp = TH_OFF(tcp)*4;
+	
 	if (size_tcp < 20) {
 		printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
 		return;
@@ -141,39 +192,16 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	int size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
 	
-	printf("payload size?: %d\n", packet + SIZE_ETHERNET + size_ip + size_tcp);
-	printf("payload size?: %d\n", size_payload);
-	print_payload(payload, size_payload);
-	
+	//printf("payload size?: %d\n", packet + SIZE_ETHERNET + size_ip + size_tcp);
+	//printf("payload size?: %d\n", size_payload);
+	char* first_header=malloc(size_payload);
+	first_header=retrieve_payload(payload, size_payload);
+	printf("\nHeader: %s\n", first_header);
 	
 	
 }
 
 
-
-void print_payload(const u_char *payload, int length) {
-
-	int i;
-	for(i = 0; i < length; i++) {
-		if (isprint(*payload)) {
-			printf("%c", *payload);
-		} else {
-			int c=*payload;
-			if (c == 10) {
-				printf("NL");
-			} else if (c == 13) {
-				printf("CR");
-			} else {
-				printf("%d", *payload);
-
-			}
-
-		}
-		payload++;
-	}	
-	
-
-}
 
 
 
