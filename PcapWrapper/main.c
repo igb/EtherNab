@@ -89,6 +89,11 @@ char *retrieve_payload(const u_char *payload, int length) {
 	
 	char* first_header= malloc(length);
 	
+	int is_http=0;
+	int is_gif=0;
+	
+	//int header_count=0;
+	
 	int i;
 	
 	for(i = 0; i < length; i++) {
@@ -108,6 +113,22 @@ char *retrieve_payload(const u_char *payload, int length) {
 				payload++;
 				c2=*payload;
 				if (c2 == 10) {
+					if (strcmp(first_header, "HTTP/1.1 200 OK") == 0) {
+						//printf("\n\n%s\n", "It's HTTP");
+						is_http=1;
+						
+					}
+					
+					if (strncmp(first_header, "Content-Type: image/gif", 23) == 0) {
+						//printf("\n\n%s\n", "It's a GIF");
+						is_gif=1;
+
+					}
+					
+					//free(first_header);
+					first_header= malloc(length);
+					
+					//header_count++;
 					printf("\n"); 
 				}
 			} else {
@@ -119,6 +140,7 @@ char *retrieve_payload(const u_char *payload, int length) {
 		}
 		payload++;
 	}	
+		printf("\nis a gif %d via http %d", is_gif, is_http);
 	
 	return first_header;
 }
