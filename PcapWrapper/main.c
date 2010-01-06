@@ -87,9 +87,13 @@ struct sniff_tcp {
 
 char *retrieve_payload(const u_char *payload, int length) {
 	
+	FILE *file; 
+	file = fopen("/tmp/file.gif","a+"); 
+
+	
 	char* first_header= malloc(length);
 	char* img_payload= malloc(length);
-	
+
 	int is_http=0;
 	int is_gif=0;
 	int previous_sequence_was_clrf=0;
@@ -99,13 +103,25 @@ char *retrieve_payload(const u_char *payload, int length) {
 	int i;
 	
 	for(i = 0; i < length; i++) {
+		
+		if (is_html_entity) {
+			for(;i < length; i++) {
+			 fwrite(payload, 1, 1, file);
+				payload++;
+			}
+			fclose(file);
+			return img_payload;
+		}
 		if (isprint(*payload)) {
 			printf("%c", *payload);
-			char* mychar= malloc(2);
+			u_char* mychar= malloc(2);
 			sprintf(mychar, "%c", *payload);
 			strcat(first_header,mychar);
 			previous_sequence_was_clrf=0;
 			if (is_html_entity) {
+				//fwrite(payload, 1, 1, file);
+
+				
 				strcat(img_payload,mychar);
 			}
 		} else {
@@ -114,6 +130,8 @@ char *retrieve_payload(const u_char *payload, int length) {
 			sprintf(mychar, "%c", *payload);
 			
 			if (is_html_entity) {
+			//	fwrite(payload, 1, 1, file);
+
 				strcat(img_payload,mychar);
 			}
 			
@@ -156,6 +174,8 @@ char *retrieve_payload(const u_char *payload, int length) {
 				sprintf(mychar, "%c", *payload);
 				
 				if (is_html_entity) {
+					//fwrite(payload, 1, 1, file);
+
 					strcat(img_payload,mychar);
 				}
 				
@@ -170,14 +190,10 @@ char *retrieve_payload(const u_char *payload, int length) {
 		payload++;
 	}	
 		printf("\nis a gif %d via http %d", is_gif, is_http);
-	
+	fclose(file); /*done!*/ 
+
 	if (is_gif && is_http) {
 		
-		FILE *file; 
-		file = fopen("/tmp/file.gif","a+"); /* apend file (add text to 
-										a file or create a file if it does not exist.*/ 
-			fwrite(img_payload, 1, length, file);
-			fclose(file); /*done!*/ 
 		
 		return img_payload;
 		
