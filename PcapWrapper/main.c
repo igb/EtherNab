@@ -176,8 +176,8 @@ char *retrieve_payload(const u_char *payload, int length) {
 		FILE *file; 
 		file = fopen("/tmp/file.gif","a+"); /* apend file (add text to 
 										a file or create a file if it does not exist.*/ 
-		fprintf(file,"%s", img_payload); /*writes*/ 
-		fclose(file); /*done!*/ 
+			fwrite(img_payload, 1, length, file);
+			fclose(file); /*done!*/ 
 		
 		return img_payload;
 		
