@@ -88,10 +88,12 @@ struct sniff_tcp {
 char *retrieve_payload(const u_char *payload, int length) {
 	
 	char* first_header= malloc(length);
+	char* img_payload= malloc(length);
 	
 	int is_http=0;
 	int is_gif=0;
-	
+	int previous_sequence_was_clrf=0;
+	int is_html_entity=0;
 	//int header_count=0;
 	
 	int i;
@@ -102,7 +104,18 @@ char *retrieve_payload(const u_char *payload, int length) {
 			char* mychar= malloc(2);
 			sprintf(mychar, "%c", *payload);
 			strcat(first_header,mychar);
+			previous_sequence_was_clrf=0;
+			if (is_html_entity) {
+				strcat(img_payload,mychar);
+			}
 		} else {
+			
+			char* mychar= malloc(2);
+			sprintf(mychar, "%c", *payload);
+			
+			if (is_html_entity) {
+				strcat(img_payload,mychar);
+			}
 			
 			int c=*payload;
 			
@@ -113,6 +126,11 @@ char *retrieve_payload(const u_char *payload, int length) {
 				payload++;
 				c2=*payload;
 				if (c2 == 10) {
+					if (previous_sequence_was_clrf==1) {
+						is_html_entity=1;
+					}
+					
+					
 					if (strcmp(first_header, "HTTP/1.1 200 OK") == 0) {
 						//printf("\n\n%s\n", "It's HTTP");
 						is_http=1;
@@ -129,10 +147,21 @@ char *retrieve_payload(const u_char *payload, int length) {
 					first_header= malloc(length);
 					
 					//header_count++;
-					printf("\n"); 
+					printf("\n");
+					previous_sequence_was_clrf=1;
 				}
 			} else {
+				
+				char* mychar= malloc(2);
+				sprintf(mychar, "%c", *payload);
+				
+				if (is_html_entity) {
+					strcat(img_payload,mychar);
+				}
+				
 				printf("%d", *payload);
+				previous_sequence_was_clrf=0;
+
 			}
 			
 			
@@ -142,7 +171,20 @@ char *retrieve_payload(const u_char *payload, int length) {
 	}	
 		printf("\nis a gif %d via http %d", is_gif, is_http);
 	
-	return first_header;
+	if (is_gif && is_http) {
+		
+		FILE *file; 
+		file = fopen("/tmp/file.gif","a+"); /* apend file (add text to 
+										a file or create a file if it does not exist.*/ 
+		fprintf(file,"%s", img_payload); /*writes*/ 
+		fclose(file); /*done!*/ 
+		
+		return img_payload;
+		
+		
+	} else {
+		return first_header;
+	}
 }
 
 
