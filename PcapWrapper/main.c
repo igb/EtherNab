@@ -96,6 +96,7 @@ char *retrieve_payload(const u_char *payload, int length) {
 
 	int is_http=0;
 	int is_gif=0;
+	int is_jpg=0;
 	int previous_sequence_was_clrf=0;
 	int is_html_entity=0;
 	//int header_count=0;
@@ -109,6 +110,10 @@ char *retrieve_payload(const u_char *payload, int length) {
 			 fwrite(payload, 1, 1, file);
 				payload++;
 			}
+			printf("\nis a gif %d via http %d", is_gif, is_http);
+			printf("\nis a jpg %d via http %d", is_jpg, is_http);
+
+
 			fclose(file);
 			return img_payload;
 		}
@@ -118,23 +123,13 @@ char *retrieve_payload(const u_char *payload, int length) {
 			sprintf(mychar, "%c", *payload);
 			strcat(first_header,mychar);
 			previous_sequence_was_clrf=0;
-			if (is_html_entity) {
-				//fwrite(payload, 1, 1, file);
-
-				
-				strcat(img_payload,mychar);
-			}
+			
 		} else {
 			
 			char* mychar= malloc(2);
 			sprintf(mychar, "%c", *payload);
 			
-			if (is_html_entity) {
-			//	fwrite(payload, 1, 1, file);
-
-				strcat(img_payload,mychar);
-			}
-			
+		
 			int c=*payload;
 			
 			int c2=-1;
@@ -161,6 +156,14 @@ char *retrieve_payload(const u_char *payload, int length) {
 
 					}
 					
+					
+					if (strncmp(first_header, "Content-Type: image/jpeg", 24) == 0) {
+						//printf("\n\n%s\n", "It's a GIF");
+						is_jpg=1;
+						
+					}
+					
+					
 					//free(first_header);
 					first_header= malloc(length);
 					
@@ -170,16 +173,12 @@ char *retrieve_payload(const u_char *payload, int length) {
 				}
 			} else {
 				
-				char* mychar= malloc(2);
-				sprintf(mychar, "%c", *payload);
+			//	char* mychar= malloc(2);
+			//	sprintf(mychar, "%c", *payload);
 				
-				if (is_html_entity) {
-					//fwrite(payload, 1, 1, file);
-
-					strcat(img_payload,mychar);
-				}
+			
 				
-				printf("%d", *payload);
+				//printf("%d", *payload);
 				previous_sequence_was_clrf=0;
 
 			}
@@ -223,7 +222,7 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	const struct sniff_ethernet *ethernet; /* The ethernet header */
 	const struct sniff_ip *ip; /* The IP header */
 	const struct sniff_tcp *tcp; /* The TCP header */
-	const char *payload; /* Packet payload */
+	const u_char *payload; /* Packet payload */
 	
 	u_int size_ip;
 	u_int size_tcp;
@@ -239,10 +238,12 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 		printf("   * Invalid IP header length: %u bytes\n", size_ip);
 		return;
 	}
-	
+	printf("\n===START PACKET==================================================================\n");
+
 	
 	/* print source and destination IP addresses */
-	printf("\n\nFrom: %s\n", inet_ntoa(ip->ip_src));
+	printf("\n\nIP HEADERS:\n");
+	printf("From: %s\n", inet_ntoa(ip->ip_src));
 	printf("To: %s\n", inet_ntoa(ip->ip_dst));
 	printf("TTL: %d \n",(ip->ip_ttl));
 	printf("Protocol: %d\n",(ip->ip_p));
@@ -265,6 +266,13 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	}
 	
 	
+	printf("\n\nTCP HEADERS:\n");
+	printf("Source Port: %d \n",(tcp->th_sport));
+	printf("Dest. Port: %d \n",(tcp->th_dport));
+	printf("Sequence Number: %u \n",(tcp->th_seq));
+	printf("Ack Number: %u \n\n",(tcp->th_ack));
+
+	
 	
 	
 	
@@ -276,7 +284,7 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	//printf("payload size?: %d\n", size_payload);
 	char* first_header=malloc(size_payload);
 	first_header=retrieve_payload(payload, size_payload);
-	printf("\nHeader: %s\n", first_header);
+	printf("\n	===END PACKET==================================================================\n");
 	
 	
 }
@@ -287,7 +295,7 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 
 int main (int argc, const char * argv[]) {
 	
-	char *dev = argv[1];
+	const char *dev = argv[1];
 	bpf_u_int32 mask;		/* Our netmask */
 	bpf_u_int32 net;		/* Our IP */
 	pcap_t *handle;			/* Session handle */
@@ -295,8 +303,7 @@ int main (int argc, const char * argv[]) {
 	struct bpf_program fp;		/* The compiled filter */
 	char filter_exp[] = "tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)";	/* The filter expression */
 	
-	struct pcap_pkthdr header;	/* The header that pcap gives us */
-	const u_char *packet;		/* The actual packet */
+
 	
 	char errbuf[PCAP_ERRBUF_SIZE];
 	
