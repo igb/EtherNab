@@ -17,11 +17,20 @@ struct http_response {
 		
 };
 
+
 struct list_node {
 	char* data;
 	struct list_node *next;
 };
 
+
+struct conn {
+	int source;
+	int dest;
+	int count;
+	FILE* file;
+	char* type[10];
+} my_conn_arr[100];
 
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
@@ -82,10 +91,79 @@ struct sniff_tcp {
 };
 
 
+int have_we_seen_this_connection_yet(int source, int dest) {
+	
+	
+	for(int i=0; i<100; i++)  {
+		if ((dest==my_conn_arr[i].dest) && (source==my_conn_arr[i].source)) {
+			return 1;
+		}		
+	}	
+
+	return 0;
+}
+
+
+struct conn get_connection(int source, int dest) {
+	
+	
+	for(int i=0; i<100; i++)  {
+		if ((dest==my_conn_arr[i].dest) && (source==my_conn_arr[i].source)) {
+			return my_conn_arr[i];
+		}		
+	}	
+	
+}
+
+
+void increment_connection_count(int source, int dest) {
+	
+	
+	for(int i=0; i<100; i++)  {
+		if ((dest==my_conn_arr[i].dest) && (source==my_conn_arr[i].source)) {
+			my_conn_arr[i].count=(my_conn_arr[i].count + 1);
+			return;
+		}		
+	}	
+}
 
 
 
-char *retrieve_payload(const u_char *payload, int length) {
+void increment_connection_count_for_conn(struct conn my_conn) {
+	increment_connection_count(my_conn.source, my_conn.dest);
+}
+
+void add_connection(struct conn my_conn) {
+	
+	char* file_name[100];
+	sprintf(file_name, "/tmp/file%d-%d", my_conn.source, my_conn.dest);
+	
+	for(int i=0; i<100; i++)  {
+		if ((my_conn_arr[i].dest==0) && (my_conn_arr[i].source==0)) {
+			my_conn_arr[i].dest=my_conn.dest;
+			my_conn_arr[i].source=my_conn.source;
+			my_conn_arr[i].count=1;
+			my_conn_arr[i].file=fopen(file_name,"a+"); 
+			my_conn.file=my_conn_arr[i].file;
+			my_conn.count=my_conn_arr[i].count;
+		    return;
+		}
+	
+	}
+	
+	my_conn_arr[0].dest=my_conn.dest;
+	my_conn_arr[0].source=my_conn.source;
+	my_conn_arr[0].count=1;
+	my_conn_arr[0].file=fopen(file_name,"a+");
+	my_conn.file=my_conn_arr[0].file;
+	my_conn.count=my_conn_arr[0].count;
+
+
+	
+}
+
+
+char *retrieve_payload(const u_char *payload, int length, struct conn conn_for_packet) {
 	
 	FILE *file; 
 	file = fopen("/tmp/file.gif","a+"); 
@@ -99,7 +177,6 @@ char *retrieve_payload(const u_char *payload, int length) {
 	int is_jpg=0;
 	int previous_sequence_was_clrf=0;
 	int is_html_entity=0;
-	//int header_count=0;
 	
 	int i;
 	
@@ -107,9 +184,11 @@ char *retrieve_payload(const u_char *payload, int length) {
 		
 		if (is_html_entity) {
 			for(;i < length; i++) {
-			 fwrite(payload, 1, 1, file);
+			   fwrite(payload, 1, 1, &conn_for_packet.file);
 				payload++;
 			}
+			fclose(&conn_for_packet.file);
+
 			printf("\nis a gif %d via http %d", is_gif, is_http);
 			printf("\nis a jpg %d via http %d", is_jpg, is_http);
 
@@ -145,40 +224,33 @@ char *retrieve_payload(const u_char *payload, int length) {
 					
 					
 					if (strcmp(first_header, "HTTP/1.1 200 OK") == 0) {
-						//printf("\n\n%s\n", "It's HTTP");
 						is_http=1;
 						
 					}
 					
 					if (strncmp(first_header, "Content-Type: image/gif", 23) == 0) {
-						//printf("\n\n%s\n", "It's a GIF");
 						is_gif=1;
+						//conn_for_packet.type="GIF";
 
 					}
 					
 					
 					if (strncmp(first_header, "Content-Type: image/jpeg", 24) == 0) {
-						//printf("\n\n%s\n", "It's a GIF");
 						is_jpg=1;
+						//conn_for_packet.type="JPG";
 						
 					}
 					
 					
-					//free(first_header);
 					first_header= malloc(length);
 					
-					//header_count++;
+				
 					printf("\n");
 					previous_sequence_was_clrf=1;
 				}
 			} else {
 				
-			//	char* mychar= malloc(2);
-			//	sprintf(mychar, "%c", *payload);
-				
-			
-				
-				//printf("%d", *payload);
+	
 				previous_sequence_was_clrf=0;
 
 			}
@@ -274,7 +346,24 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 
 	
 	
+	struct conn my_conn;
 	
+	my_conn.dest=(tcp->th_dport);
+	my_conn.source=(tcp->th_sport);
+	
+	if (!have_we_seen_this_connection_yet(my_conn.source, my_conn.dest)) {
+		
+		add_connection(my_conn);
+	
+	} else {
+		increment_connection_count(my_conn.source, my_conn.dest);
+		my_conn=get_connection(my_conn.source, my_conn.dest);
+	}
+	
+	
+	
+//	printf("my_ports.dest: %d \n",my_ports.dest);
+//	printf("my_ports.source: %d \n",my_ports.source);
 	
 	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 	
@@ -282,10 +371,18 @@ void handle_packet(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	//printf("payload size?: %d\n", packet + SIZE_ETHERNET + size_ip + size_tcp);
 	//printf("payload size?: %d\n", size_payload);
-	char* first_header=malloc(size_payload);
-	first_header=retrieve_payload(payload, size_payload);
+	retrieve_payload(payload, size_payload, my_conn);
 	printf("\n	===END PACKET==================================================================\n");
+
 	
+	for(int i=0; i<100; i++)  {
+		if ((my_conn_arr[i].dest!=0) && (my_conn_arr[i].source!=0)) {
+			fclose(&my_conn_arr[i].file);
+			printf("\nsource: %d, dest: %d, count: %d\n", my_conn_arr[i].source, my_conn_arr[i].dest, my_conn_arr[i].count);
+			
+		}
+		
+	}
 	
 }
 
@@ -353,6 +450,10 @@ int main (int argc, const char * argv[]) {
 
 	/* And close the session */
 	pcap_close(handle);
+	
+	
+
+	
 	
 	return(0);
 	
